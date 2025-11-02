@@ -176,14 +176,11 @@ fn print_path(
     user_goal: &String,
 ) {
     match path {
-        // `Some` means we found a path!
         Some((total_distance, path_vec)) => {
-            // Loop from 0 to the *second-to-last* item
             for i in 0..path_vec.len() - 1 {
                 let from_id = path_vec[i];
                 let to_id = path_vec[i + 1];
 
-                // Get names, using .map_or() to handle "null"
                 let from_name = place_id_to_name
                     .get(&from_id)
                     .map_or("(null)", |s| s.as_str());
@@ -191,8 +188,6 @@ fn print_path(
                     .get(&to_id)
                     .map_or("(null)", |s| s.as_str());
 
-                // Find the edge to get description and length
-                // We have to search the `road_map` for the specific edge
                 let mut edge_description = "???";
                 let mut edge_length = 0.0;
 
@@ -203,7 +198,6 @@ fn print_path(
                     }
                 }
 
-                // Print the formatted line
                 println!(
                     "  {}: {}({}) -> {}({}), {}, {:.2} mi.",
                     i + 1,
@@ -216,7 +210,6 @@ fn print_path(
                 );
             }
 
-            // Print the final summary
             println!(
                 "It takes {:.2} miles from {}({}) to {}({}).",
                 total_distance,
@@ -226,7 +219,6 @@ fn print_path(
                 user_goal.trim()
             );
         }
-        // `None` means the `distances` map never found the goal_id
         None => {
             println!(
                 "No path found from {} ({}) to {} ({}). They may not be connected.",
