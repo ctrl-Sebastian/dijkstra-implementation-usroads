@@ -117,30 +117,35 @@ fn dijkstra(
 
     let mut priority_queue = BinaryHeap::new();
 
+	// add the starting node to distances and priority queue
     distances.insert(start_id, 0.0);
     priority_queue.push(State {
         node_id: start_id,
         cost: 0.0,
     });
 
+	// first, get the starting node
     while let Some(State { node_id, cost }) = priority_queue.pop() {
+		// if the current node is the goal node, end
         if node_id == goal_id {
             break;
         }
 
+		//
         if cost > *distances.get(&node_id).unwrap_or(&f32::INFINITY) {
             continue;
         }
 
+		// get all neighbors of current node
         if let Some(neighbors) = graph.get(&node_id) {
             for neighbor in neighbors {
+				// for each neighbor of current node, build a next State with the neighbor id and total cost
                 let next = State {
                     node_id: neighbor.destination,
                     cost: cost + neighbor.length,
                 };
 
-                let is_shorter =
-                    next.cost < *distances.get(&next.node_id).unwrap_or(&f32::INFINITY);
+                let is_shorter: bool = next.cost < *distances.get(&next.node_id).unwrap_or(&f32::INFINITY);
 
                 if is_shorter {
                     distances.insert(next.node_id, next.cost);
@@ -154,6 +159,7 @@ fn dijkstra(
     if !distances.contains_key(&goal_id) {
         return None;
     }
+
     let mut path = Vec::new();
     let mut current_id = goal_id;
     while current_id != start_id {
@@ -233,7 +239,7 @@ fn print_path(
 
 fn main() {
     let (place_id_to_name, place_name_to_id) = load_places(Path::new("data/Place.txt"));
-    let road_map = load_roads(Path::new("data/Road.txt"));
+    let road_map: HashMap<i32, Vec<Neighbor>> = load_roads(Path::new("data/Road.txt"));
 
     let mut user_start = String::new();
     let mut user_goal = String::new();
@@ -270,6 +276,6 @@ fn main() {
         user_goal.trim()
     );
 
-    let path = dijkstra(&road_map, start_id, goal_id);
+    let path: Option<(f32, Vec<i32>)> = dijkstra(&road_map, start_id, goal_id);
     print_path(path, &place_id_to_name, &road_map, start_id, goal_id, &user_start, &user_goal);
 }
