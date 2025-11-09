@@ -1,56 +1,23 @@
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-#[derive(Copy, Clone)]
-struct State {
-    node_id: i32,
-    cost: f32,
-}
+use dijkstra_adjacency_list::Neighbor;
+use dijkstra_adjacency_list::dijkstra;
 
-// This tells the heap *how* to order two States (Min-heap)
-impl Ord for State {
-    fn cmp(&self, other: &Self) -> Ordering {
-        other
-            .cost
-            .partial_cmp(&self.cost)
-            .unwrap_or(Ordering::Equal)
-    }
-}
 
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for State {
-    fn eq(&self, other: &Self) -> bool {
-        self.cost == other.cost && self.node_id == other.node_id
-    }
-}
-
-impl Eq for State {}
-
-struct Neighbor {
-    destination: i32,
-    length: f32,
-    description: String,
-}
 
 fn load_places(file_path: &Path) -> (HashMap<i32, String>, HashMap<String, i32>) {
-    let mut place_id_to_name = HashMap::new();
-    let mut place_name_to_id = HashMap::new();
+    let mut place_id_to_name: HashMap<i32, String> = HashMap::new();
+    let mut place_name_to_id: HashMap<String, i32> = HashMap::new();
 
     let file = File::open(file_path).expect("Could not open file");
     let reader = BufReader::new(file);
 
     for line in reader.lines() {
-        let line_str = line.expect("error getting line");
+        let line_str: String = line.expect("error getting line");
         if let Some((place_id, place_name)) = line_str.split_once(',') {
             let place_id: i32 = place_id.trim().parse().expect("Invalid place ID");
             let place_name = place_name.trim().to_string();
@@ -62,11 +29,11 @@ fn load_places(file_path: &Path) -> (HashMap<i32, String>, HashMap<String, i32>)
     (place_id_to_name, place_name_to_id)
 }
 
-fn load_roads(file_path: &Path) -> HashMap<i32, Vec<Neighbor>> {
-    let mut graph: HashMap<i32, Vec<Neighbor>> = HashMap::new();
+fn load_roads(file_path: &Path) -> HashMap<i32, Vec<Neighbor<i32>>> {
+    let mut graph: HashMap<i32, Vec<Neighbor<i32>>> = HashMap::new();
 
-    let file = File::open(file_path).expect("Could not open file");
-    let reader = BufReader::new(file);
+    let file: File = File::open(file_path).expect("Could not open file");
+    let reader: BufReader<File> = BufReader::new(file);
 
     for line in reader.lines() {
         let line_str = line.expect("error getting line");
@@ -107,75 +74,11 @@ fn load_roads(file_path: &Path) -> HashMap<i32, Vec<Neighbor>> {
     return graph;
 }
 
-fn dijkstra(
-    graph: &HashMap<i32, Vec<Neighbor>>,
-    start_id: i32,
-    goal_id: i32,
-) -> Option<(f32, Vec<i32>)> {
-    let mut distances: HashMap<i32, f32> = HashMap::new();
-    let mut previous: HashMap<i32, i32> = HashMap::new();
-
-    let mut priority_queue = BinaryHeap::new();
-
-	// add the starting node to distances and priority queue
-    distances.insert(start_id, 0.0);
-    priority_queue.push(State {
-        node_id: start_id,
-        cost: 0.0,
-    });
-
-	// first, get the starting node
-    while let Some(State { node_id, cost }) = priority_queue.pop() {
-		// if the current node is the goal node, end
-        if node_id == goal_id {
-            break;
-        }
-
-		//
-        if cost > *distances.get(&node_id).unwrap_or(&f32::INFINITY) {
-            continue;
-        }
-
-		// get all neighbors of current node
-        if let Some(neighbors) = graph.get(&node_id) {
-            for neighbor in neighbors {
-				// for each neighbor of current node, build a next State with the neighbor id and total cost
-                let next = State {
-                    node_id: neighbor.destination,
-                    cost: cost + neighbor.length,
-                };
-
-                let is_shorter: bool = next.cost < *distances.get(&next.node_id).unwrap_or(&f32::INFINITY);
-
-                if is_shorter {
-                    distances.insert(next.node_id, next.cost);
-                    previous.insert(next.node_id, node_id);
-                    priority_queue.push(next);
-                }
-            }
-        }
-    }
-
-    if !distances.contains_key(&goal_id) {
-        return None;
-    }
-
-    let mut path = Vec::new();
-    let mut current_id = goal_id;
-    while current_id != start_id {
-        path.push(current_id);
-        current_id = *previous.get(&current_id).unwrap();
-    }
-    path.push(start_id);
-    path.reverse();
-
-    Some((distances[&goal_id], path))
-}
 
 fn print_path(
     path: Option<(f32, Vec<i32>)>,
     place_id_to_name: &HashMap<i32, String>,
-    road_map: &HashMap<i32, Vec<Neighbor>>,
+    road_map: &HashMap<i32, Vec<Neighbor<i32>>>,
     start_id: i32,
     goal_id: i32,
     user_start: &String,
@@ -239,7 +142,7 @@ fn print_path(
 
 fn main() {
     let (place_id_to_name, place_name_to_id) = load_places(Path::new("data/Place.txt"));
-    let road_map: HashMap<i32, Vec<Neighbor>> = load_roads(Path::new("data/Road.txt"));
+    let road_map: HashMap<i32, Vec<Neighbor<i32>>> = load_roads(Path::new("data/Road.txt"));
 
     let mut user_start = String::new();
     let mut user_goal = String::new();
