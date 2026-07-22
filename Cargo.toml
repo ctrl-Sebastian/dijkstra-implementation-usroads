@@ -3,9 +3,11 @@ name = "dijkstra-adjacency-list"
 version = "0.1.0"
 edition = "2024"
 authors = ["Sebastian De Leon sebastianipl0131@gmail.com"]
-description = "Dijkstra algorithm implmentation using adjacency list."
+description = "Dijkstra algorithm implementation using an adjacency list."
+readme = "README.md"
 license = "MIT"
 keywords = ["dijkstra", "pathfinding", "graph", "shortest-path"]
 categories = ["algorithms", "data-structures"]
+exclude = ["data/**", "src/main.rs"]
 
 [dependencies]
